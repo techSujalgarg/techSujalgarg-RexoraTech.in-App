@@ -1,0 +1,290 @@
+{
+  "entities": {
+    "UserWorkspace": {
+      "title": "UserWorkspace",
+      "description": "Authenticated client workspace anchor without sensitive contact PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user UID matching the document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Client display name from Google profile.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the workspace was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the workspace was last updated."
+        }
+      },
+      "required": ["uid", "displayName", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated private PII record for an authenticated client workspace.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Owner UID matching parent user document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified account email address.",
+          "minLength": 5,
+          "maxLength": 160,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when private info was updated."
+        }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "EnquiryRecord": {
+      "title": "EnquiryRecord",
+      "description": "Client project consultation enquiry tracked in Firestore.",
+      "type": "object",
+      "properties": {
+        "referenceId": {
+          "type": "string",
+          "description": "Unique RexoraTech enquiry reference ID.",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the client who submitted the tracked enquiry.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the contact person.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "businessName": {
+          "type": "string",
+          "description": "Company or organization name.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Business email address for follow-up.",
+          "minLength": 5,
+          "maxLength": 160,
+          "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        },
+        "serviceRequired": {
+          "type": "string",
+          "description": "Selected RexoraTech service category.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "projectBudget": {
+          "type": "string",
+          "description": "Optional indicated budget band.",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "projectRequirements": {
+          "type": "string",
+          "description": "Project scope and operational requirements.",
+          "minLength": 15,
+          "maxLength": 3000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["New", "In Review", "Scoped", "Archived"],
+          "description": "Lifecycle review status of the enquiry."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest update."
+        }
+      },
+      "required": [
+        "referenceId",
+        "ownerId",
+        "fullName",
+        "businessName",
+        "email",
+        "serviceRequired",
+        "projectBudget",
+        "projectRequirements",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SolutionBlueprintRecord": {
+      "title": "SolutionBlueprintRecord",
+      "description": "Saved AI Solution Scope Advisor architecture blueprint for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique blueprint document ID.",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "blueprintTitle": {
+          "type": "string",
+          "description": "Generated solution architecture title.",
+          "minLength": 3,
+          "maxLength": 180
+        },
+        "industry": {
+          "type": "string",
+          "description": "Selected industry sector.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "teamSize": {
+          "type": "string",
+          "description": "Team or operational scale.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "executiveSummary": {
+          "type": "string",
+          "description": "Concise executive summary of the proposed architecture.",
+          "minLength": 10,
+          "maxLength": 1200
+        },
+        "recommendedServices": {
+          "type": "array",
+          "description": "Recommended RexoraTech services (max 10)."
+        },
+        "automationWorkflows": {
+          "type": "array",
+          "description": "Recommended automation workflows (max 10)."
+        },
+        "systemModules": {
+          "type": "array",
+          "description": "System module breakdown maps (max 10)."
+        },
+        "implementationPhases": {
+          "type": "array",
+          "description": "Phased delivery schedule maps (max 10)."
+        },
+        "challenge": {
+          "type": "string",
+          "description": "Original user operational goal input.",
+          "minLength": 12,
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "blueprintTitle",
+        "industry",
+        "teamSize",
+        "executiveSummary",
+        "recommendedServices",
+        "automationWorkflows",
+        "systemModules",
+        "implementationPhases",
+        "challenge",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminGrant": {
+      "title": "AdminGrant",
+      "description": "Read-only admin grant registry for delegated administrators.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Admin user UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "grantedBy": {
+          "type": "string",
+          "description": "Provisioner identifier.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin grant was provisioned."
+        }
+      },
+      "required": ["uid", "grantedBy", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserWorkspace" },
+      "description": "Top-level workspace metadata anchored by verified user UID."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII subcollection storing user email, gated by parent workspace doc."
+    },
+    "/enquiries/{enquiryId}": {
+      "schema": { "$ref": "#/entities/EnquiryRecord" },
+      "description": "Tracked project consultation enquiries scoped to owner UID or verified admin."
+    },
+    "/blueprints/{blueprintId}": {
+      "schema": { "$ref": "#/entities/SolutionBlueprintRecord" },
+      "description": "Saved AI Solution Scope Advisor architecture blueprints scoped to owner UID."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminGrant" },
+      "description": "Trusted admin grant registry (client writes forbidden)."
+    }
+  }
+}

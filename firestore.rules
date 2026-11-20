@@ -1,0 +1,324 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'gargsujal6july@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidEmail(email) {
+      return email is string
+        && email.size() >= 5
+        && email.size() <= 160
+        && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    // Entity Validation Blueprints
+    function isValidUserWorkspace(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 120
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'updatedAt'])
+        && isValidId(data.uid)
+        && isValidEmail(data.email)
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidEnquiryRecord(data) {
+      return data.keys().hasAll([
+          'referenceId',
+          'ownerId',
+          'fullName',
+          'businessName',
+          'email',
+          'serviceRequired',
+          'projectBudget',
+          'projectRequirements',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'referenceId',
+          'ownerId',
+          'fullName',
+          'businessName',
+          'email',
+          'serviceRequired',
+          'projectBudget',
+          'projectRequirements',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.referenceId)
+        && data.referenceId.size() >= 4
+        && data.referenceId.size() <= 64
+        && isValidId(data.ownerId)
+        && data.fullName is string
+        && data.fullName.size() >= 2
+        && data.fullName.size() <= 100
+        && data.businessName is string
+        && data.businessName.size() >= 2
+        && data.businessName.size() <= 120
+        && isValidEmail(data.email)
+        && data.serviceRequired is string
+        && data.serviceRequired.size() >= 2
+        && data.serviceRequired.size() <= 120
+        && data.projectBudget is string
+        && data.projectBudget.size() <= 80
+        && data.projectRequirements is string
+        && data.projectRequirements.size() >= 15
+        && data.projectRequirements.size() <= 3000
+        && data.status in ['New', 'In Review', 'Scoped', 'Archived']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBlueprintRecord(data) {
+      return data.keys().hasAll([
+          'id',
+          'ownerId',
+          'blueprintTitle',
+          'industry',
+          'teamSize',
+          'executiveSummary',
+          'recommendedServices',
+          'automationWorkflows',
+          'systemModules',
+          'implementationPhases',
+          'challenge',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'ownerId',
+          'blueprintTitle',
+          'industry',
+          'teamSize',
+          'executiveSummary',
+          'recommendedServices',
+          'automationWorkflows',
+          'systemModules',
+          'implementationPhases',
+          'challenge',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.id.size() >= 4
+        && isValidId(data.ownerId)
+        && data.blueprintTitle is string
+        && data.blueprintTitle.size() >= 3
+        && data.blueprintTitle.size() <= 180
+        && data.industry is string
+        && data.industry.size() >= 2
+        && data.industry.size() <= 80
+        && data.teamSize is string
+        && data.teamSize.size() >= 2
+        && data.teamSize.size() <= 80
+        && data.executiveSummary is string
+        && data.executiveSummary.size() >= 10
+        && data.executiveSummary.size() <= 1200
+        && data.recommendedServices is list
+        && data.recommendedServices.size() >= 1
+        && data.recommendedServices.size() <= 10
+        && data.recommendedServices[0] is string
+        && data.recommendedServices[0].size() <= 120
+        && data.automationWorkflows is list
+        && data.automationWorkflows.size() >= 1
+        && data.automationWorkflows.size() <= 10
+        && data.automationWorkflows[0] is string
+        && data.automationWorkflows[0].size() <= 240
+        && data.systemModules is list
+        && data.systemModules.size() >= 1
+        && data.systemModules.size() <= 10
+        && data.systemModules[0] is map
+        && data.systemModules[0].keys().hasOnly(['moduleName', 'purpose'])
+        && data.systemModules[0].moduleName is string
+        && data.systemModules[0].moduleName.size() <= 120
+        && data.systemModules[0].purpose is string
+        && data.systemModules[0].purpose.size() <= 400
+        && data.implementationPhases is list
+        && data.implementationPhases.size() >= 1
+        && data.implementationPhases.size() <= 10
+        && data.implementationPhases[0] is map
+        && data.implementationPhases[0].keys().hasOnly(['phase', 'focus'])
+        && data.implementationPhases[0].phase is string
+        && data.implementationPhases[0].phase.size() <= 120
+        && data.implementationPhases[0].focus is string
+        && data.implementationPhases[0].focus.size() <= 400
+        && data.challenge is string
+        && data.challenge.size() >= 12
+        && data.challenge.size() <= 2000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Boot-time connectivity check document (read-only ping, never writable)
+    match /test/connection {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // Trusted Admin Registry (client writes strictly denied)
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // User Workspace Metadata (no PII) + Split Private PII Subcollection
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserWorkspace(incoming())
+        && incoming().uid == request.auth.uid
+        && userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserWorkspace(incoming())
+        && (isOwner(userId) || isAdmin())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']);
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && docId == 'info' && (isOwner(userId) || isAdmin());
+        allow list: if false;
+        allow create: if isVerifiedUser()
+          && isValidId(userId)
+          && isValidId(docId)
+          && docId == 'info'
+          && isValidUserPrivateInfo(incoming())
+          && incoming().uid == request.auth.uid
+          && userId == request.auth.uid
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+        allow update: if isVerifiedUser()
+          && isValidId(userId)
+          && isValidId(docId)
+          && docId == 'info'
+          && isValidUserPrivateInfo(incoming())
+          && isOwner(userId)
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt'])
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+        allow delete: if false;
+      }
+    }
+
+    // Tracked Project Enquiries
+    match /enquiries/{enquiryId} {
+      allow get: if isValidId(enquiryId) && ((resource != null && isOwner(existing().ownerId)) || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(enquiryId)
+        && isValidEnquiryRecord(incoming())
+        && incoming().ownerId == request.auth.uid
+        && incoming().status == 'New'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(enquiryId)
+        && isValidEnquiryRecord(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().referenceId == existing().referenceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (existing().status != 'Archived' || isAdmin())
+        && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+          (
+            isOwner(existing().ownerId)
+            && existing().status == 'New'
+            && incoming().status == 'New'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['projectBudget', 'projectRequirements', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(enquiryId)
+        && resource != null
+        && (isAdmin() || (isOwner(existing().ownerId) && existing().status == 'New'));
+    }
+
+    // Saved AI Solution Scope Blueprints
+    match /blueprints/{blueprintId} {
+      allow get: if isValidId(blueprintId) && ((resource != null && isOwner(existing().ownerId)) || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(blueprintId)
+        && isValidBlueprintRecord(incoming())
+        && incoming().id == blueprintId
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(blueprintId)
+        && isValidBlueprintRecord(incoming())
+        && (isOwner(existing().ownerId) || isAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['blueprintTitle', 'executiveSummary', 'updatedAt']);
+      allow delete: if isVerifiedUser()
+        && isValidId(blueprintId)
+        && resource != null
+        && (isOwner(existing().ownerId) || isAdmin());
+    }
+  }
+}
